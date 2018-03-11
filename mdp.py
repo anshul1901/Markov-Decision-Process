@@ -1,6 +1,5 @@
 inp = raw_input()
 inp = inp.split()
-
 n = int(inp[0])
 m = int(inp[1])
 
@@ -14,7 +13,6 @@ for i in range(n):
 
 inp = raw_input()
 inp = inp.split()
-
 e = int(inp[0])
 w = int(inp[1])
 
