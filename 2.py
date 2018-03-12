@@ -4,19 +4,19 @@ import sys, math, copy
 class MDP:
 
     def __init__(self, board, policy, walls, end_states, step_reward, start):
+        """Initializing the class."""
         self.board = board
         self.walls = walls
         self.start = start
         self.old_board = copy.deepcopy(self.board)
         self.end_states = end_states
-        self.policy =policy
+        self.policy = policy
         self.probability = {
         'target' : 0.8,
         'alt':     0.1,
         }
         self.delta = 0.85
         self.step_reward = step_reward
-        self.noop_states = copy.deepcopy(self.end_states)
         self.init_board()
         self.init_policy()
         self.value_iteration()
@@ -28,7 +28,6 @@ class MDP:
             x, y = self.walls[i]
             self.board[x][y] =  None
             self.policy[x][y] = None
-            self.noop_states.append(walls[i])
 
     def init_policy(self):
         """Initializing policy for the board."""
@@ -41,6 +40,7 @@ class MDP:
                 self.policy[x][y] = "Bad"
 
     def value_iteration(self):
+        """Running value iteration algorithm."""
         while True:
             changed_pairs = []
             for i in range(len(self.board)):
@@ -58,64 +58,76 @@ class MDP:
 
     def policy_formation(self):
 
-        for row in range(len(self.board)):
-            for col in range(len(self.board[row])):
-                if (row, col) in self.noop_states:
-                    continue
-                print('Estimating S(%d,%d)' % (row, col))
-                self.policy[row][col] = self.policy_update((row, col))
-                 #Print the policy
-                self.print_policy()
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                if (i, j) not in self.end_states and (i, j) not in self.walls:
+                    # self.policy[i][j] = self.policy_update((i, j))
+
+                    util = [0.0, 0.0, 0.0, 0.0]
+                    # right neighbour
+                    util[0] = self.get_state_utility(self.old_board[i][j], (i, j+1))
+                    # bottom neighbour
+                    util[1] = self.get_state_utility(self.old_board[i][j], (i+1, j))
+                    # left neighbour
+                    util[2] = self.get_state_utility(self.old_board[i][j], (i, j-1))
+                    # above neighbour
+                    util[3] = self.get_state_utility(self.old_board[i][j], (i-1, j))
+
+                    val = [0.0, 0.0, 0.0, 0.0]
+                    val[0] = util[0]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+                    val[1] = util[1]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
+                    val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+                    val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
+
+                    total_utility =  self.step_reward + max(val)
+                    print total_utility
+
+                    pos = "0"
+                    if (val[0] == max(val) ):
+                        pos = "4"
+                    elif (val[1] == max(val) ):
+                        pos = "2"
+                    elif (val[2] == max(val) ):
+                        pos = "3"
+                    elif (val[3] == max(val)):
+                        pos = "1"
+
+                    self.policy[i][j] = pos
+                    self.print_policy()
         return
 
-    def policy_update(self, state_coords):
-        r, c = state_coords
+    def policy_update(self, state):
+        x, y = state
 
-        e_coords = (r, c + 1)
-        s_coords = (r + 1, c)
-        w_coords = (r, c - 1)
-        n_coords = (r - 1, c)
+        util = [0.0, 0.0, 0.0, 0.0]
+        # right neighbour
+        util[0] = self.get_state_utility(self.old_board[x][y], (x, y+1))
+        # bottom neighbour
+        util[1] = self.get_state_utility(self.old_board[x][y], (x+1, y))
+        # left neighbour
+        util[2] = self.get_state_utility(self.old_board[x][y], (x, y-1))
+        # above neighbour
+        util[3] = self.get_state_utility(self.old_board[x][y], (x-1, y))
 
-        e_util = self.get_state_policy(self.board[r][c], e_coords)
-        s_util = self.get_state_policy(self.board[r][c], s_coords)
-        w_util = self.get_state_policy(self.board[r][c], w_coords)
-        n_util = self.get_state_policy(self.board[r][c], n_coords)
+        val = [0.0, 0.0, 0.0, 0.0]
+        val[0] = util[0]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+        val[1] = util[1]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
+        val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+        val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
 
-
-        #print('e_util%s = %f' % (e_coords, e_util))
-        #print('s_util%s = %f' % (s_coords, s_util))
-        #print('w_util%s = %f' % (w_coords, w_util))
-        #print('n_util%s = %f' % (n_coords, n_util))
-
-        # print 'E: '
-        e_value = self.get_value(e_util, n_util, s_util, w_util)
-        print('e_value%s = %f' % (e_coords, self.step_reward+ e_value))
-        print  'S: '
-        s_value = self.get_value(s_util, e_util, w_util, n_util)
-        print('s_value%s = %f' % (s_coords, self.step_reward+s_value))
-        print 'W: '
-        w_value = self.get_value(w_util, s_util, n_util, e_util)
-        print('w_value%s = %f' % (w_coords, self.step_reward+w_value))
-        print 'N: '
-        n_value = self.get_value(n_util, w_util, e_util, s_util)
-        print('n_value%s = %f' % (n_coords, self.step_reward+n_value))
-
-        print ('\n')
-        print 'MAX IS : ' + str(max(self.step_reward+e_value, self.step_reward+s_value, self.step_reward+w_value, self.step_reward+n_value))
-        xd =  (self.step_reward) + max(e_value, s_value, w_value, n_value)
+        total_utility =  self.step_reward + max(val)
         print 'Total utility for this state: ' #+ (self.step_reward) + ' ' + '+' +' '+ (self.discount_factor)+ ' '+ '*'+ ' '+ 'max( '+e_value+' '+s_val
-        print xd
+        print total_utility
 
         #Finally, return the appropriate letter to be filled
-
-        if (e_value == max(e_value, s_value, w_value, n_value) ):
-            return "E"
-        elif (s_value == max(e_value, s_value, w_value, n_value) ):
-            return "S"
-        elif (w_value == max(e_value, s_value, w_value, n_value) ):
-            return "W"
-        elif (n_value == max(e_value, s_value, w_value, n_value)):
-            return "N"
+        if (val[0] == max(val) ):
+            return "4"
+        elif (val[1] == max(val) ):
+            return "2"
+        elif (val[2] == max(val) ):
+            return "3"
+        elif (val[3] == max(val)):
+            return "1"
 
     def update(self, state):
         x, y = state
@@ -137,8 +149,6 @@ class MDP:
         val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
 
         total_utility =  self.step_reward +  max(val)
-        print 'Total utility for this state: '
-        print total_utility
         return total_utility
 
     def get_state_utility(self, curVal, state):
@@ -153,26 +163,17 @@ class MDP:
             return curVal
         return self.board[x][y]
 
-    def print_board(self, decimal_places=0):
-        for row in range(len(self.board)):
-            print('-' * 70)
-            sys.stdout.write(str(row))
-            for col in range(len(self.board[row])):
-                val = self.board[row][col]
-                if type(val) == float:
-                    val = round(val, decimal_places)
-                sys.stdout.write(' | %14s' % val)
-            print('|')
-        print('-' * 70)
-
     def print_policy(self):
-        for row in range(len(self.policy)):
-            print('-' * 70)
-            sys.stdout.write(str(row))
-            for col in range(len(self.policy[row])):
-                sys.stdout.write(' | %14s' % self.policy[row][col])
+        for j in range(len(self.policy[0])):
+            sys.stdout.write(' | %16s' % str(j))
+        print
+        for i in range(len(self.policy)):
+            print('_' * 80)
+            sys.stdout.write(str(i))
+            for j in range(len(self.policy[i])):
+                sys.stdout.write(' | %16s' % self.policy[i][j])
             print('|')
-        print('-' * 70)
+        print('_' * 80)
 
 
 if __name__ == '__main__':
