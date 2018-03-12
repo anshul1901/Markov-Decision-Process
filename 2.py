@@ -76,10 +76,10 @@ class MDP:
         w_coords = (r, c - 1)
         n_coords = (r - 1, c)
 
-        e_util = self.get_utility_of_policy(self.board[r][c], e_coords)
-        s_util = self.get_utility_of_policy(self.board[r][c], s_coords)
-        w_util = self.get_utility_of_policy(self.board[r][c], w_coords)
-        n_util = self.get_utility_of_policy(self.board[r][c], n_coords)
+        e_util = self.get_state_policy(self.board[r][c], e_coords)
+        s_util = self.get_state_policy(self.board[r][c], s_coords)
+        w_util = self.get_state_policy(self.board[r][c], w_coords)
+        n_util = self.get_state_policy(self.board[r][c], n_coords)
 
 
         #print('e_util%s = %f' % (e_coords, e_util))
@@ -143,20 +143,11 @@ class MDP:
             return curVal
         return self.old_board[x][y]
 
-    def get_utility_of_policy(self, own_value, target_coords):
-        row, col = target_coords
-
-        if row < 0 or col < 0:
-            print('Bumping against a wall in S(%d,%d)' % (row, col))
-            return own_value
-
-        try:
-            value = self.board[row][col] or own_value
-        except IndexError:
-            print('Bumping against a wall in S(%d,%d)' % (row, col))
-            value = own_value
-        return float(value)
-
+    def get_state_policy(self, curVal, state):
+        x, y = state
+        if x < 0 or y < 0 or x>len(self.board)-1 or y>len(self.board[x])-1 or self.old_board[x][y]==0 or self.old_board[x][y]==None:
+            return curVal
+        return self.board[x][y]
 
     def value_function(self, target, left=0, right=0, back=0):
         xy = float(self.probability['target'] * target + \
