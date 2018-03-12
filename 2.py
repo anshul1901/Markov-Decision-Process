@@ -88,16 +88,16 @@ class MDP:
         #print('n_util%s = %f' % (n_coords, n_util))
 
         # print 'E: '
-        e_value = self.value_function(e_util, n_util, s_util, w_util)
+        e_value = self.get_value(e_util, n_util, s_util, w_util)
         print('e_value%s = %f' % (e_coords, self.step_reward+ e_value))
         print  'S: '
-        s_value = self.value_function(s_util, e_util, w_util, n_util)
+        s_value = self.get_value(s_util, e_util, w_util, n_util)
         print('s_value%s = %f' % (s_coords, self.step_reward+s_value))
         print 'W: '
-        w_value = self.value_function(w_util, s_util, n_util, e_util)
+        w_value = self.get_value(w_util, s_util, n_util, e_util)
         print('w_value%s = %f' % (w_coords, self.step_reward+w_value))
         print 'N: '
-        n_value = self.value_function(n_util, w_util, e_util, s_util)
+        n_value = self.get_value(n_util, w_util, e_util, s_util)
         print('n_value%s = %f' % (n_coords, self.step_reward+n_value))
 
         print ('\n')
@@ -121,16 +121,20 @@ class MDP:
         x, y = state
 
         util = [0.0, 0.0, 0.0, 0.0]
+        # right neighbour
         util[0] = self.get_state_utility(self.old_board[x][y], (x, y+1))
+        # bottom neighbour
         util[1] = self.get_state_utility(self.old_board[x][y], (x+1, y))
+        # left neighbour
         util[2] = self.get_state_utility(self.old_board[x][y], (x, y-1))
+        # above neighbour
         util[3] = self.get_state_utility(self.old_board[x][y], (x-1, y))
 
         val = [0.0, 0.0, 0.0, 0.0]
-        val[0] = self.value_function(util[0], util[3], util[1], util[2])
-        val[1] = self.value_function(util[1], util[0], util[2], util[3])
-        val[2] = self.value_function(util[2], util[1], util[3], util[0])
-        val[3] = self.value_function(util[3], util[2], util[0], util[1])
+        val[0] = util[0]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+        val[1] = util[1]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
+        val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+        val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
 
         total_utility =  self.step_reward +  max(val)
         print 'Total utility for this state: '
@@ -148,15 +152,6 @@ class MDP:
         if x < 0 or y < 0 or x>len(self.board)-1 or y>len(self.board[x])-1 or self.old_board[x][y]==0 or self.old_board[x][y]==None:
             return curVal
         return self.board[x][y]
-
-    def value_function(self, target, left=0, right=0, back=0):
-        xy = float(self.probability['target'] * target + \
-            self.probability['alt'] * left + \
-            self.probability['alt'] * right +\
-            self.probability['alt'] * back)
-
-        print "-0.85 + " +str(self.probability['target']) + str("*(")+ str(target)+str(") + ") +str(self.probability['alt']) + str("*(")+str(left)+str(") + ")+str(self.probability['alt']) + str("*(")+str(right)+str(") ")
-        return xy
 
     def print_board(self, decimal_places=0):
         for row in range(len(self.board)):
