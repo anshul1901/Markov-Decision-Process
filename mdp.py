@@ -48,18 +48,23 @@ class MDP:
 
     def update(self, state):
         """Bellman update step."""
-        # Value of neighbour above
-        val1 = get_utility(curVal, (state[0], state[1]+1))
-        # Value of neighbour below
-        val2 = get_utility(curVal, (state[0], state[1]-1))
-        # Value of neighbour on the left
-        val3 = get_utility(curVal, (state[0]-1, state[1]))
-        # Value of neighbour on the right
-        val4 = get_utility(curVal, (state[0]+1, state[1]))
 
+        # curVal represents the current utility of the state
+        curVal = self.old_board[state[0]][state[1]]
+
+        # Initializing value array for neighbours
+        val = [0 for i in range(4)]
+        # Value of neighbour above
+        val.append(get_utility(curVal, tuple(state[0], state[1]+1)))
+        # Value of neighbour below
+        val.append(get_utility(curVal, tuple(state[0], state[1]-1)))
+        # Value of neighbour on the left
+        val.append(get_utility(curVal, tuple(state[0]-1, state[1])))
+        # Value of neighbour on the right
+        val.append(get_utility(curVal, tuple(state[0]+1, state[1])))
 
         # Discount factor is taken as 1 in this step.
-        util =  (self.step_reward) + max(e_value, s_value, w_value, n_value)
+        return self.step_reward + max(val)
 
     def get_state_utility(self, curVal, state):
         """Get utility of a state from old board after checking if state is valid."""
