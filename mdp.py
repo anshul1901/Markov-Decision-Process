@@ -63,6 +63,11 @@ class MDP:
         # Value of neighbour on the right
         val.append(get_utility(curVal, tuple(state[0]+1, state[1])))
 
+        val[0] = val[0]*self.probability.target + (val[2]+val[3])*self.probability.alt
+        val[1] = val[1]*self.probability.target + (val[2]+val[3])*self.probability.alt
+        val[2] = val[2]*self.probability.target + (val[0]+val[1])*self.probability.alt
+        val[3] = val[3]*self.probability.target + (val[0]+val[1])*self.probability.alt
+
         # Discount factor is taken as 1 in this step.
         return self.step_reward + max(val)
 
@@ -72,8 +77,8 @@ class MDP:
         if x < 0 or y < 0 or x>length(self.old_board) or y>length(self.old_board[0]):
             # Hit the edge of the board, return value of initial state from which
             # fucntion was called.
-            return curVal
-        return self.old_board[x][y]
+            return float(curVal)
+        return float(self.old_board[x][y])
 
     def get_state_policy(self, curVal, state):
         """Get policy of a state from old board after checking if state is valid."""
@@ -81,8 +86,8 @@ class MDP:
         if x < 0 or y < 0 or x>length(self.old_board) or y>length(self.old_board[0]):
             # Hit the edge of the board, return value of initial state from which
             # fucntion was called.
-            return curVal
-        return self.board[x][y]
+            return float(curVal)
+        return float(self.board[x][y])
 
 
 if __name__ == '__main__':
