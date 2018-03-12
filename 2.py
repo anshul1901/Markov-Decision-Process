@@ -1,4 +1,4 @@
-import sys, math, copy
+import sys, copy
 
 
 class MDP:
@@ -20,7 +20,7 @@ class MDP:
         self.init_board()
         self.init_policy()
         self.value_iteration()
-        self.policy_formation()
+        self.policy_function()
 
     def init_board(self):
         """Initializing the board with the walls. Replacing walls with NaN."""
@@ -33,12 +33,37 @@ class MDP:
         """Initializing policy for the board."""
         for i in range(len(self.end_states)):
             x, y = self.end_states[i]
-            print self.board[x][y]
             if self.board[x][y] > 0:
                 self.policy[x][y] = "Goal"
             else:
                 self.policy[x][y] = "Bad"
 
+    def print_policy(self):
+        sys.stdout.write(' ')
+        for j in range(len(self.policy[0])):
+            sys.stdout.write(' | %16s' % str(j))
+        print
+        for i in range(len(self.policy)):
+            print('_' * 80)
+            sys.stdout.write(str(i))
+            for j in range(len(self.policy[i])):
+                sys.stdout.write(' | %16s' % self.policy[i][j])
+            print('|')
+        print('_' * 80)
+
+    def print_board(self):
+        sys.stdout.write(' ')
+        for j in range(len(self.board[0])):
+            sys.stdout.write(' | %16s' % str(j))
+        print
+        for i in range(len(self.board)):
+            print('_' * 80)
+            sys.stdout.write(str(i))
+            for j in range(len(self.board[i])):
+                sys.stdout.write(' | %16s' % self.board[i][j])
+            print('|')
+        print('_' * 80)
+        
     def value_iteration(self):
         """Running value iteration algorithm."""
         while True:
@@ -56,7 +81,7 @@ class MDP:
             # Setting old_board as new board for next iteration
             self.old_board = copy.deepcopy(self.board)
 
-    def policy_formation(self):
+    def policy_function(self):
 
         for i in range(len(self.board)):
             for j in range(len(self.board[i])):
@@ -80,7 +105,7 @@ class MDP:
                     val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
 
                     total_utility =  self.step_reward + max(val)
-                    print total_utility
+                    # print total_utility
 
                     pos = "0"
                     if (val[0] == max(val) ):
@@ -93,41 +118,9 @@ class MDP:
                         pos = "1"
 
                     self.policy[i][j] = pos
-                    self.print_policy()
+                    # self.print_policy()
         return
 
-    def policy_update(self, state):
-        x, y = state
-
-        util = [0.0, 0.0, 0.0, 0.0]
-        # right neighbour
-        util[0] = self.get_state_utility(self.old_board[x][y], (x, y+1))
-        # bottom neighbour
-        util[1] = self.get_state_utility(self.old_board[x][y], (x+1, y))
-        # left neighbour
-        util[2] = self.get_state_utility(self.old_board[x][y], (x, y-1))
-        # above neighbour
-        util[3] = self.get_state_utility(self.old_board[x][y], (x-1, y))
-
-        val = [0.0, 0.0, 0.0, 0.0]
-        val[0] = util[0]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
-        val[1] = util[1]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
-        val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
-        val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
-
-        total_utility =  self.step_reward + max(val)
-        print 'Total utility for this state: ' #+ (self.step_reward) + ' ' + '+' +' '+ (self.discount_factor)+ ' '+ '*'+ ' '+ 'max( '+e_value+' '+s_val
-        print total_utility
-
-        #Finally, return the appropriate letter to be filled
-        if (val[0] == max(val) ):
-            return "4"
-        elif (val[1] == max(val) ):
-            return "2"
-        elif (val[2] == max(val) ):
-            return "3"
-        elif (val[3] == max(val)):
-            return "1"
 
     def update(self, state):
         x, y = state
@@ -162,18 +155,6 @@ class MDP:
         if x < 0 or y < 0 or x>len(self.board)-1 or y>len(self.board[x])-1 or self.old_board[x][y]==0 or self.old_board[x][y]==None:
             return curVal
         return self.board[x][y]
-
-    def print_policy(self):
-        for j in range(len(self.policy[0])):
-            sys.stdout.write(' | %16s' % str(j))
-        print
-        for i in range(len(self.policy)):
-            print('_' * 80)
-            sys.stdout.write(str(i))
-            for j in range(len(self.policy[i])):
-                sys.stdout.write(' | %16s' % self.policy[i][j])
-            print('|')
-        print('_' * 80)
 
 
 if __name__ == '__main__':
@@ -230,3 +211,4 @@ if __name__ == '__main__':
 
     # Creating class object and beginning value iteration
     m = MDP(board, policy, walls, end_states, unit_step_reward, start)
+    m.print_board()
