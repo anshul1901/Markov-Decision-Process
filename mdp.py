@@ -1,160 +1,166 @@
-"""AI Assignment 2."""
 import sys, copy
 
+
 class MDP:
-    def __init__(self, board, end_states, walls, start_state, step_reward, policy):
-        "Initializing the MDP."
-        self.board = board;
-        self.old_board = copy.deepcopy(self.board);
-        # self.old_board = [[self.board[i][j] for j in range(len(self.board[i]))] for i in range(len(self.board))]
-        self.end_states = end_states;
+
+    def __init__(self, board, policy, walls, end_states, step_reward, start):
+        """Initializing the class."""
+        self.board = board
+        self.walls = walls
+        self.start = start
+        self.old_board = copy.deepcopy(self.board)
+        self.end_states = end_states
+        self.policy = policy
         self.probability = {
         'target' : 0.8,
         'alt':     0.1,
         }
-        self.walls = walls;
-        self.start_state = start_state;
-        self.step_reward = step_reward;
-        self.policy = policy
         self.delta = 0.01
+        self.step_reward = step_reward
         self.init_board()
         self.init_policy()
         self.value_iteration()
-        self.policy_func()
+        self.policy_function()
 
     def init_board(self):
         """Initializing the board with the walls. Replacing walls with NaN."""
         for i in range(len(self.walls)):
             x, y = self.walls[i]
-            self.board[x][y] = "NaN"
+            self.board[x][y] =  None
+            self.policy[x][y] = None
 
     def init_policy(self):
         """Initializing policy for the board."""
         for i in range(len(self.end_states)):
             x, y = self.end_states[i]
-            print self.board[x][y]
             if self.board[x][y] > 0:
                 self.policy[x][y] = "Goal"
             else:
                 self.policy[x][y] = "Bad"
 
+    def print_policy(self):
+        sys.stdout.write(' ')
+        for j in range(len(self.policy[0])):
+            sys.stdout.write(' | %16s' % str(j))
+        print
+        for i in range(len(self.policy)):
+            print('_' * 80)
+            sys.stdout.write(str(i))
+            for j in range(len(self.policy[i])):
+                sys.stdout.write(' | %16s' % self.policy[i][j])
+            print('|')
+        print('_' * 80)
+
+    def print_board(self):
+        sys.stdout.write(' ')
+        for j in range(len(self.board[0])):
+            sys.stdout.write(' | %16s' % str(j))
+        print
+        for i in range(len(self.board)):
+            print('_' * 80)
+            sys.stdout.write(str(i))
+            for j in range(len(self.board[i])):
+                x = self.board[i][j]
+                if type(x)==float:
+                    x = round(x, 3)
+                sys.stdout.write(' | %16s' % x)
+            print('|')
+        print('_' * 80)
+
     def value_iteration(self):
-        """Applying value iteration algorithm on the board."""
+        """Running value iteration algorithm."""
         while True:
             changed_pairs = []
             for i in range(len(self.board)):
-                    for j in range(len(self.board[i])):
-                        if (i, j) not in self.walls and (i, j) not in self.end_states:
-                            # print('Iteration %d' % int(i + 1))
-                            # print('Estimating S(%d,%d)' % (i, j))
-                            self.board[i][j] = self.update((i, j))
-                            if (self.old_board[i][j])!=0:
-                                changed_pairs.append(abs(self.board[i][j]-(self.old_board[i][j]))/self.old_board[i][j])
-            print changed_pairs
+                for j in range(len(self.board[i])):
+                    if (i, j) not in self.walls and (i,j) not in self.end_states:
+                        self.board[i][j] = self.update(tuple((i, j)))
+                        if self.old_board[i][j]!=0:
+                            changed_pairs.append((self.board[i][j] - self.old_board[i][j])/self.old_board[i][j])
+                        else:
+                            changed_pairs.append(69.0)
+
             # Adding code to check if change is less than delta and then terminate
-            if max(changed_pairs) <= self.delta:
+            if (max(changed_pairs) <= self.delta):
                 return
 
-            for i in range(len(self.board)):
-                for j in range(len(self.board[i])):
-                    if (i, j) in self.walls or (i, j) in self.end_states:
-                        continue
-                    self.old_board[i][j] = self.board[i][j]
+            # Setting old_board as new board for next iteration
+            self.old_board = copy.deepcopy(self.board)
 
-    def update(self, state):
-        """Bellman update step."""
-
-        # curVal represents the current utility of the state
-        curVal = self.old_board[state[0]][state[1]]
-
-        # Initializing value array for neighbours
-        val = [float(0) for i in range(4)]
-        # Value of neighbour above
-        val[0] = (self.get_state_utility(curVal, tuple((state[0], state[1]+1))))
-        # Value of neighbour below
-        val[1] = (self.get_state_utility(curVal, tuple((state[0], state[1]-1))))
-        # Value of neighbour on the left
-        val[2] = (self.get_state_utility(curVal, tuple((state[0]-1, state[1]))))
-        # Value of neighbour on the right
-        val[3] = (self.get_state_utility(curVal, tuple((state[0]+1, state[1]))))
-
-        # print val
-        val[0] = val[0]*self.probability['target'] + (val[2]+val[3])*self.probability['alt']
-        val[1] = val[1]*self.probability['target'] + (val[2]+val[3])*self.probability['alt']
-        val[2] = val[2]*self.probability['target'] + (val[0]+val[1])*self.probability['alt']
-        val[3] = val[3]*self.probability['target'] + (val[0]+val[1])*self.probability['alt']
-        # print val
-        # Discount factor is taken as 1 in this step.
-        return self.step_reward + max(val)
-
-    def get_state_utility(self, curVal, state):
-        """Get utility of a state from old board after checking if state is valid."""
-        x, y = state
-        if x < 0 or y < 0:
-            # Hit the edge of the board, return value of initial state from which
-            # function was called.
-            return float(curVal)
-        try:
-            value = self.board[x][y] or curVal
-        except IndexError:
-            return float(curVal)
-        return float(self.old_board[x][y])
-
-    def get_state_policy(self, curVal, state):
-        """Get policy of a state from old board after checking if state is valid."""
-        x, y = state
-        if x < 0 or y < 0:
-            # Hit the edge of the board, return value of initial state from which
-            # function was called.
-            return float(curVal)
-
-        try:
-            value = self.board[x][y] or curVal
-        except IndexError:
-            return float(curVal)
-
-        return float(self.board[x][y])
-
-    def policy_func(self):
-        """Setting the policy after completion of value iteration."""
+    def policy_function(self):
 
         for i in range(len(self.board)):
             for j in range(len(self.board[i])):
-                if tuple((i, j)) not in self.walls and tuple((i, j)) not in self.end_states:
+                if (i, j) not in self.end_states and (i, j) not in self.walls:
+                    # self.policy[i][j] = self.policy_update((i, j))
 
-                    # curVal represents the current policy of the state
-                    curVal = self.board[i][j]
+                    util = [0.0, 0.0, 0.0, 0.0]
+                    # right neighbour
+                    util[0] = self.get_state_utility(self.old_board[i][j], (i, j+1))
+                    # bottom neighbour
+                    util[1] = self.get_state_utility(self.old_board[i][j], (i+1, j))
+                    # left neighbour
+                    util[2] = self.get_state_utility(self.old_board[i][j], (i, j-1))
+                    # above neighbour
+                    util[3] = self.get_state_utility(self.old_board[i][j], (i-1, j))
 
-                    # Initializing value array for neighbours
-                    val = [0 for k in range(4)]
-                    # Value of neighbour above
-                    val[0] = (self.get_state_policy(curVal, tuple((i, j+1))))
-                    # Value of neighbour below
-                    val[1] = (self.get_state_policy(curVal, tuple((i, j-1))))
-                    # Value of neighbour on the left
-                    val[2] = (self.get_state_policy(curVal, tuple((i-1, j))))
-                    # Value of neighbour on the right
-                    val[3] = (self.get_state_policy(curVal, tuple((i+1, j))))
-                    # print val
-                    val[0] = val[0]*self.probability['target'] + (val[2]+val[3])*self.probability['alt']
-                    val[1] = val[1]*self.probability['target'] + (val[2]+val[3])*self.probability['alt']
-                    val[2] = val[2]*self.probability['target'] + (val[0]+val[1])*self.probability['alt']
-                    val[3] = val[3]*self.probability['target'] + (val[0]+val[1])*self.probability['alt']
+                    val = [0.0, 0.0, 0.0, 0.0]
+                    val[0] = util[0]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+                    val[1] = util[1]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
+                    val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+                    val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
 
-                    maxIndex = -1
-                    for k in range(4):
-                        if max(val) == val[k]:
-                            maxIndex = k
-                            break
+                    total_utility =  self.step_reward + max(val)
+                    # print total_utility
 
-                    self.policy[i][j] = k+1
-                    self.print_policy()
+                    pos = "0"
+                    if (val[0] == max(val) ):
+                        pos = "4"
+                    elif (val[1] == max(val) ):
+                        pos = "2"
+                    elif (val[2] == max(val) ):
+                        pos = "3"
+                    elif (val[3] == max(val)):
+                        pos = "1"
 
-    def print_policy(self):
-        for i in range(len(self.policy)):
-            for j in range(len(self.policy[i])):
-                sys.stdout.write('%s ' % self.policy[i][j])
-            print('\n')
+                    self.policy[i][j] = pos
+                    # self.print_policy()
+        return
+
+
+    def update(self, state):
+        x, y = state
+
+        util = [0.0, 0.0, 0.0, 0.0]
+        # right neighbour
+        util[0] = self.get_state_utility(self.old_board[x][y], (x, y+1))
+        # bottom neighbour
+        util[1] = self.get_state_utility(self.old_board[x][y], (x+1, y))
+        # left neighbour
+        util[2] = self.get_state_utility(self.old_board[x][y], (x, y-1))
+        # above neighbour
+        util[3] = self.get_state_utility(self.old_board[x][y], (x-1, y))
+
+        val = [0.0, 0.0, 0.0, 0.0]
+        val[0] = util[0]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+        val[1] = util[1]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
+        val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
+        val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
+
+        total_utility =  self.step_reward +  max(val)
+        return total_utility
+
+    def get_state_utility(self, curVal, state):
+        x, y = state
+        if x < 0 or y < 0 or x>len(self.board)-1 or y>len(self.board[x])-1 or self.old_board[x][y]==0 or self.old_board[x][y]==None:
+            return curVal
+        return self.old_board[x][y]
+
+    def get_state_policy(self, curVal, state):
+        x, y = state
+        if x < 0 or y < 0 or x>len(self.board)-1 or y>len(self.board[x])-1 or self.old_board[x][y]==0 or self.old_board[x][y]==None:
+            return curVal
+        return self.board[x][y]
 
 
 if __name__ == '__main__':
@@ -169,7 +175,7 @@ if __name__ == '__main__':
     board = [[0 for i in range(m)] for j in range(n)]
 
     # Initializing policy
-    policy = [["NaN" for i in range(m)] for j in range(n)]
+    policy = [["n/a" for i in range(m)] for j in range(n)]
 
     # Taking row wise input
     for i in range(n):
@@ -209,4 +215,6 @@ if __name__ == '__main__':
     # Taking input for unit step reward
     unit_step_reward = float(raw_input())
 
-    m = MDP(board, end_states, walls, start, unit_step_reward, policy)
+    # Creating class object and beginning value iteration
+    m = MDP(board, policy, walls, end_states, unit_step_reward, start)
+    m.print_board()
