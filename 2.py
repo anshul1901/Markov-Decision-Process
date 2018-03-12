@@ -15,7 +15,7 @@ class MDP:
         'target' : 0.8,
         'alt':     0.1,
         }
-        self.delta = 0.85
+        self.delta = 0.01
         self.step_reward = step_reward
         self.init_board()
         self.init_policy()
@@ -60,10 +60,13 @@ class MDP:
             print('_' * 80)
             sys.stdout.write(str(i))
             for j in range(len(self.board[i])):
-                sys.stdout.write(' | %16s' % self.board[i][j])
+                x = self.board[i][j]
+                if type(x)==float:
+                    x = round(x, 3)
+                sys.stdout.write(' | %16s' % x)
             print('|')
         print('_' * 80)
-        
+
     def value_iteration(self):
         """Running value iteration algorithm."""
         while True:
@@ -72,10 +75,13 @@ class MDP:
                 for j in range(len(self.board[i])):
                     if (i, j) not in self.walls and (i,j) not in self.end_states:
                         self.board[i][j] = self.update(tuple((i, j)))
-                        changed_pairs.append((self.board[i][j] - self.old_board[i][j]))
+                        if self.old_board[i][j]!=0:
+                            changed_pairs.append((self.board[i][j] - self.old_board[i][j])/self.old_board[i][j])
+                        else:
+                            changed_pairs.append(69.0)
 
             # Adding code to check if change is less than delta and then terminate
-            if (max(changed_pairs) < self.delta):
+            if (max(changed_pairs) <= self.delta):
                 return
 
             # Setting old_board as new board for next iteration
