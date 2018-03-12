@@ -1,25 +1,4 @@
-#!/bin/env python
-"""
-
-MDP ITERATION POLICY
-
-COMMENTS: The original algorithm written was wrong and needed correction (mentioned below). Attaching the name of the author here
-who first wrote this (for attribution).
-Also, extra features added are breaking the loop after maximum change in utilities go below a pre-defined threshold
-and addition of policy iteration after the termination of the algorithm.
-
-CORRECTION TO ORIGINAL VERSION:
-The original version updated the bellman states by considering the immediate updated values of the world. That is not the case with the
-Value Iteration Algorithm. It has to consider the previous world state in order to compute the latest one. The mistake gave wrong values
-and has since been corrected in this version.
-
-
-"""
-__author__ = 'Jan Beilicke <dev +at+ jotbe-fx +dot+ de>'
-__date__ = '2011-11-11'
-__coauthor__ = 'Bakhtiyar Syed'
-__date__ = '2017-03-11'
-import sys, math
+import sys, math, copy
 
 
 class ValueIterator:
@@ -270,42 +249,96 @@ class ValueIterator:
 
 if __name__ == '__main__':
 
-    world = [
-                [None, None, 17, None],
-                [0,   0,  0,   0],
-                [0, -17, None, 0],
-                [0, 0, 0, 0]
-            ]
-    prev_world = [
-                [None, None, 17, None],
-                [0,   0,  0,   0],
-                [0, -17, None, 0],
-                [0, 0, 0, 0]
-            ]
+    # world = [
+    #             [None, None, 17, None],
+    #             [0,   0,  0,   0],
+    #             [0, -17, None, 0],
+    #             [0, 0, 0, 0]
+    #         ]
+    # prev_world = [
+    #             [None, None, 17, None],
+    #             [0,   0,  0,   0],
+    #             [0, -17, None, 0],
+    #             [0, 0, 0, 0]
+    #         ]
+    #
+    # policy = [
+    #             [None, None, "Goal", None],
+    #             ["n/a", "n/a", "n/a", "n/a"],
+    #             ["n/a", "Pit", None, "n/a"],
+    #             ["n/a" , "n/a", "n/a", "n/a"]
+    # ]
+    # read_only_states = [(0, 0), (0, 1), (0, 2), (0,3), (2,1), (2,2)]
+    #
+    # # For stochastic actions
+    # Vi_stochastic = ValueIterator(world, policy, prev_world,read_only_states, prob_target=0.8, prob_left=0.1, prob_right=0.1, state_reward=-0.85 , delta=0.85)
+    #
+    # Vi_stochastic.iterate(100)
 
-    policy = [
-                [None, None, "Goal", None],
-                ["n/a", "n/a", "n/a", "n/a"],
-                ["n/a", "Pit", None, "n/a"],
-                ["n/a" , "n/a", "n/a", "n/a"]
-    ]
-    read_only_states = [(0, 0), (0, 1), (0, 2), (0,3), (2,1), (2,2)]
+    # Taking input for size of board
+    inp = raw_input()
+    inp = inp.split()
+    n = int(inp[0])
+    m = int(inp[1])
 
-    # For stochastic actions
-    Vi_stochastic = ValueIterator(world, policy, prev_world,read_only_states, prob_target=0.8, prob_left=0.1, prob_right=0.1, state_reward=-0.85 , delta=0.85)
+    # Initializing board with 0
+    board = [[0 for i in range(m)] for j in range(n)]
+
+    # Initializing policy
+    policy = [["n/a" for i in range(m)] for j in range(n)]
+
+    # Taking row wise input
+    for i in range(n):
+        rows = raw_input()
+        rows = rows.split()
+        for j in range(m):
+            board[i][j] = float(rows[j])
+
+    # Taking input for e and w, number of end states and number of walls
+    inp = raw_input()
+    inp = inp.split()
+    e = int(inp[0])
+    w = int(inp[1])
+
+    # Initializing end states and walls arrays
+    end_states = []
+    walls = []
+
+    # Taking input for all end states
+    for i in range(e):
+        inp = raw_input()
+        inp = inp.split()
+        end_states.append(tuple((int(inp[0]), int(inp[1]))))
+
+    # Taking input for all walls
+    for i in range(w):
+        inp = raw_input()
+        inp = inp.split()
+        walls.append(tuple((int(inp[0]), int(inp[1]))))
+
+    # Taking input for start state
+    inp = raw_input()
+    inp = inp.split()
+
+    start = tuple((inp[0], inp[1]))
+
+    # Taking input for unit step reward
+    unit_step_reward = float(raw_input())
+    read_only_states = copy.deepcopy(end_states)
+    for i in range(len(walls)):
+        x, y = walls[i]
+        board[x][y] =  None
+        policy[x][y] = None
+        read_only_states.append(walls[i])
+    for i in range(len(end_states)):
+        x, y = end_states[i]
+        print board[x][y]
+        if board[x][y] > 0:
+            policy[x][y] = "Goal"
+        else:
+            policy[x][y] = "Bad"
+    old_board = copy.deepcopy(board)
+    # m = MDP(board, end_states, walls, start, unit_step_reward, policy)
+    Vi_stochastic = ValueIterator(board, policy, old_board,read_only_states, prob_target=0.8, prob_left=0.1, prob_right=0.1, state_reward=unit_step_reward , delta=0.85)
 
     Vi_stochastic.iterate(100)
-
-    # For stochastic actions with no costs
-    #Vi_stochastic = ValueIterator(world, read_only_states, prob_target=0.8, prob_left=0.1, prob_right=0.1, state_reward=0, discount_factor=0.1)
-    #Vi_stochastic.iterate(100)
-
-    # For deterministic actions
-    #Vi_deterministic = ValueIterator(world, read_only_states, prob_target=1, state_reward=-3)
-    #Vi_deterministic.iterate(50)
-
-    # For stochastic actions with high costs (even higher then the ditch in (0,4))
-    # "This is an extreme case. I don't know why it would make sense to set a penalty for life that is
-    # so negative that even negative death is worse than living."
-    #Vi_stochastic = ValueIterator(world, read_only_states, prob_target=0.8, prob_left=0.1, prob_right=0.1, state_reward=-200)
-    #Vi_stochastic.iterate(50)
