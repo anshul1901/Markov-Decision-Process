@@ -121,10 +121,10 @@ class MDP:
         x, y = state
 
         util = [0.0, 0.0, 0.0, 0.0]
-        util[0] = self.get_utility_of_state(self.old_board[x][y], (x, y+1))
-        util[1] = self.get_utility_of_state(self.old_board[x][y], (x+1, y))
-        util[2] = self.get_utility_of_state(self.old_board[x][y], (x, y-1))
-        util[3] = self.get_utility_of_state(self.old_board[x][y], (x-1, y))
+        util[0] = self.get_state_utility(self.old_board[x][y], (x, y+1))
+        util[1] = self.get_state_utility(self.old_board[x][y], (x+1, y))
+        util[2] = self.get_state_utility(self.old_board[x][y], (x, y-1))
+        util[3] = self.get_state_utility(self.old_board[x][y], (x-1, y))
 
         val = [0.0, 0.0, 0.0, 0.0]
         val[0] = self.value_function(util[0], util[3], util[1], util[2])
@@ -137,20 +137,11 @@ class MDP:
         print total_utility
         return total_utility
 
-    def get_utility_of_state(self, own_value, target_coords):
-        row, col = target_coords
-
-        if row < 0 or col < 0:
-            print('Bumping against a wall in S(%d,%d)' % (row, col))
-            return own_value
-
-        try:
-            value = self.old_board[row][col] or own_value
-        except IndexError:
-            print('Bumping against a wall in S(%d,%d)' % (row, col))
-            value = own_value
-        return float(value)
-
+    def get_state_utility(self, curVal, state):
+        x, y = state
+        if x < 0 or y < 0 or x>len(self.board)-1 or y>len(self.board[x])-1 or self.old_board[x][y]==0 or self.old_board[x][y]==None:
+            return curVal
+        return self.old_board[x][y]
 
     def get_utility_of_policy(self, own_value, target_coords):
         row, col = target_coords
