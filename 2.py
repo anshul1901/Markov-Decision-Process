@@ -46,7 +46,7 @@ class MDP:
             for i in range(len(self.board)):
                 for j in range(len(self.board[i])):
                     if (i, j) not in self.walls and (i,j) not in self.end_states:
-                        self.board[i][j] = self.bellman_update((i, j))
+                        self.board[i][j] = self.update(tuple((i, j)))
                         changed_pairs.append((self.board[i][j] - self.old_board[i][j]))
 
             # Adding code to check if change is less than delta and then terminate
@@ -67,9 +67,6 @@ class MDP:
                  #Print the policy
                 self.print_policy()
         return
-
-
-
 
     def policy_update(self, state_coords):
         r, c = state_coords
@@ -120,48 +117,26 @@ class MDP:
         elif (n_value == max(e_value, s_value, w_value, n_value)):
             return "N"
 
-    def bellman_update(self, state_coords):
-        r, c = state_coords
+    def update(self, state):
+        x, y = state
 
-        e_coords = (r, c + 1)
-        s_coords = (r + 1, c)
-        w_coords = (r, c - 1)
-        n_coords = (r - 1, c)
+        util = [0.0, 0.0, 0.0, 0.0]
+        util[0] = self.get_utility_of_state(self.old_board[x][y], (x, y+1))
+        util[1] = self.get_utility_of_state(self.old_board[x][y], (x+1, y))
+        util[2] = self.get_utility_of_state(self.old_board[x][y], (x, y-1))
+        util[3] = self.get_utility_of_state(self.old_board[x][y], (x-1, y))
 
-        e_util = self.get_utility_of_state(self.old_board[r][c], e_coords)
-        s_util = self.get_utility_of_state(self.old_board[r][c], s_coords)
-        w_util = self.get_utility_of_state(self.old_board[r][c], w_coords)
-        n_util = self.get_utility_of_state(self.old_board[r][c], n_coords)
+        val = [0.0, 0.0, 0.0, 0.0]
+        val[0] = self.value_function(util[0], util[3], util[1], util[2])
+        val[1] = self.value_function(util[1], util[0], util[2], util[3])
+        val[2] = self.value_function(util[2], util[1], util[3], util[0])
+        val[3] = self.value_function(util[3], util[2], util[0], util[1])
 
-        print('own_value%s = %d' % ((r, c), self.board[r][c]))
-        #print('e_util%s = %f' % (e_coords, e_util))
-        #print('s_util%s = %f' % (s_coords, s_util))
-        #print('w_util%s = %f' % (w_coords, w_util))
-        #print('n_util%s = %f' % (n_coords, n_util))
+        total_utility =  self.step_reward +  max(val)
+        print 'Total utility for this state: '
+        print total_utility
+        return total_utility
 
-        print 'E: '
-        e_value = self.value_function(e_util, n_util, s_util, w_util)
-        print('e_value%s = %f' % (e_coords, self.step_reward+ e_value))
-        print  'S: '
-        s_value = self.value_function(s_util, e_util, w_util, n_util)
-        print('s_value%s = %f' % (s_coords, self.step_reward+s_value))
-        print 'W: '
-        w_value = self.value_function(w_util, s_util, n_util, e_util)
-        print('w_value%s = %f' % (w_coords, self.step_reward+w_value))
-        print 'N: '
-        n_value = self.value_function(n_util, w_util, e_util, s_util)
-        print('n_value%s = %f' % (n_coords, self.step_reward+n_value))
-
-        print ('\n')
-        print 'MAX IS : ' + str(max(self.step_reward+e_value, self.step_reward+s_value, self.step_reward+w_value, self.step_reward+n_value))
-
-
-
-
-        xx =  (self.step_reward) +  max(e_value, s_value, w_value, n_value)
-        print 'Total utility for this state: ' #+ (self.step_reward) + ' ' + '+' +' '+ (self.discount_factor)+ ' '+ '*'+ ' '+ 'max( '+e_value+' '+s_val
-        print xx
-        return xx
     def get_utility_of_state(self, own_value, target_coords):
         row, col = target_coords
 
