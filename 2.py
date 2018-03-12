@@ -20,6 +20,7 @@ class MDP:
         self.init_board()
         self.init_policy()
         self.value_iteration()
+        self.policy_formation()
 
     def init_board(self):
         """Initializing the board with the walls. Replacing walls with NaN."""
@@ -40,69 +41,20 @@ class MDP:
                 self.policy[x][y] = "Bad"
 
     def value_iteration(self):
-        i = 0
         while True:
-            i += 1
-            print ('\n')
-            print ('\n')
-            print('_' * 80)
+            changed_pairs = []
+            for i in range(len(self.board)):
+                for j in range(len(self.board[i])):
+                    if (i, j) not in self.walls and (i,j) not in self.end_states:
+                        self.board[i][j] = self.bellman_update((i, j))
+                        changed_pairs.append((self.board[i][j] - self.old_board[i][j]))
 
-
-            for row in range(len(self.board)):
-                for col in range(len(self.board[row])):
-                    if (row, col) in self.noop_states:
-                        continue
-
-                    print('Iteration %d' % int(i + 1))
-                    print('Estimating S(%d,%d)' % (row, col))
-                    self.board[row][col] = self.bellman_update((row, col))
-
-                    self.print_board(decimal_places=4)
-
-            #Before updating the previous board to reflect the new board changes, we need to check for diff and if diff < delta
-            #How do we do that? Trying to implement...
-            list = []
-            for row in range(len(self.board)):
-                for col in range(len(self.board[row])):
-                    if (row, col) in self.noop_states:
-                        continue
-
-                    list.append((self.board[row][col] - self.old_board[row][col]))
-
-            print "List for utility change: "
-            print list
-
-
-            print "Change of utility's max = " + str(max(list))
-
-            i = max(list)
-            print i
-            for j in range(len(list)):
-                if (i == list[j]):
-                    print "coords of max utility change is "
-                    print j
-
-            if (max(list) < self.delta):
-                #print list
-                print ('-'*150)
-                print "END OF ITERATIONS"
-                print ('-'*150)
-                print ('\n')
-                print ('\n')
-
-                self.policy_formation()
+            # Adding code to check if change is less than delta and then terminate
+            if (max(changed_pairs) < self.delta):
                 return
 
-
-            #Update the previous board to the new board
-            #print self.old_board
-            #print self.board
-
-            for row in range(len(self.board)):
-                for col in range(len(self.board[row])):
-                    if (row, col) in self.noop_states:
-                        continue
-                    self.old_board[row][col] = self.board[row][col]
+            # Setting old_board as new board for next iteration
+            self.old_board = copy.deepcopy(self.board)
 
     def policy_formation(self):
 
