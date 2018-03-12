@@ -1,3 +1,15 @@
+"""AI Assignment 2."""
+
+class MDP:
+    def __init__(self, board, end_states, walls, start_state, step_reward, policy):
+        "Initializing the MDP."
+        self.board = board;
+        self.end_states = end_states;
+        self.walls = walls;
+        self.start_state = start_state;
+        self.step_reward = step_reward;
+        self.policy = policy
+
 
 
 if __name__ == '__main__':
@@ -10,6 +22,9 @@ if __name__ == '__main__':
 
     # Initializing board with 0
     board = [[0 for i in range(m)] for j in range(n)]
+
+    # Initializing policy
+    policy = [["NaN" for i in range(m)] for j in range(n)]
 
     # Taking row wise input
     for i in range(n):
@@ -50,3 +65,5 @@ if __name__ == '__main__':
 
     # Taking input for unit step reward
     unit_step_reward = float(raw_input())
+
+    m = MDP(board, end_states, walls, start, unit_step_reward, policy, )
