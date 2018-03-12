@@ -7,19 +7,19 @@ class MDP:
         self.board = board;
         self.old_board = copy.deepcopy(self.board);
         self.end_states = end_states;
-        self.walls = walls;
-        self.start_state = start_state;
-        self.step_reward = step_reward;
-        self.policy = policy
         self.probability = {
         'target' : 0.8,
         'alt':     0.1,
         }
-        self.delta = 0.01
+        self.walls = walls;
+        self.start_state = start_state;
+        self.step_reward = step_reward;
+        self.policy = policy
+        self.delta = 0.85
         self.init_board()
         self.init_policy()
         self.value_iteration()
-        self.policy()
+        self.policy_func()
 
     def init_board(self):
         """Initializing the board with the walls. Replacing walls with NaN."""
@@ -46,10 +46,11 @@ class MDP:
                             # print('Iteration %d' % int(i + 1))
                             # print('Estimating S(%d,%d)' % (i, j))
                             self.board[i][j] = self.update((i, j))
-                            changed_pairs.append((self.board[i][j]-self.old_board[i][j])/self.old_board[i][j])
-
+                            if float(self.old_board[i][j])!=0:
+                                changed_pairs.append((self.board[i][j]-float(self.old_board[i][j])))
+            print changed_pairs
             # Adding code to check if change is less than delta and then terminate
-            if max(list) <= self.delta:
+            if max(changed_pairs) < self.delta:
                 return
 
     def update(self, state):
@@ -80,28 +81,39 @@ class MDP:
     def get_state_utility(self, curVal, state):
         """Get utility of a state from old board after checking if state is valid."""
         x, y = state
-        if x < 0 or y < 0 or x>len(self.old_board) or y>len(self.old_board[0]) or self.board[x][y]==0:
+        if x < 0 or y < 0 or x>len(self.old_board) or y>len(self.old_board[0]):
             # Hit the edge of the board, return value of initial state from which
             # function was called.
+            return float(curVal)
+        try:
+            if self.board[x][y]==0:
+                return float(curVal)
+        except:
             return float(curVal)
         return float(self.old_board[x][y])
 
     def get_state_policy(self, curVal, state):
         """Get policy of a state from old board after checking if state is valid."""
         x, y = state
-        if x < 0 or y < 0 or x>len(self.old_board) or y>len(self.old_board[0]) or self.board[x][y]==0:
+        if x < 0 or y < 0 or x>len(self.old_board) or y>len(self.old_board[0]):
             # Hit the edge of the board, return value of initial state from which
             # function was called.
             return float(curVal)
 
+        try:
+            if self.board[x][y]==0:
+                return float(curVal)
+        except:
+            return float(curVal)
+
         return float(self.board[x][y])
 
-    def policy(self):
+    def policy_func(self):
         """Setting the policy after completion of value iteration."""
 
-        for i in range(len(self.world)):
-            for j in range(len(self.world[i])):
-                if tuple(i, j) not in self.walls and tuple(i, j) not in self.end_states:
+        for i in range(len(self.board)):
+            for j in range(len(self.board[i])):
+                if tuple((i, j)) not in self.walls and tuple((i, j)) not in self.end_states:
 
                     # curVal represents the current policy of the state
                     curVal = self.board[i][j]
@@ -133,8 +145,8 @@ class MDP:
     def print_policy(self):
         for i in range(len(self.policy)):
             for j in range(len(self.policy[i])):
-                sys.stdout.write(self.policy[i][j])
-            print
+                sys.stdout.write('%s ' % self.policy[i][j])
+            print('\n')
 
 
 if __name__ == '__main__':
