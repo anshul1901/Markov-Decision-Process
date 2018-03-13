@@ -9,6 +9,7 @@ class MDP:
         self.walls = walls
         self.start = start
         self.old_board = copy.deepcopy(self.board)
+        self.original = copy.deepcopy(self.board)
         self.end_states = end_states
         self.policy = policy
         self.probability = {
@@ -115,7 +116,7 @@ class MDP:
                     val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
                     val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
 
-                    total_utility =  self.step_reward + max(val)
+                    total_utility =  self.step_reward + max(val) + self.original[i][j]
                     # print total_utility
 
                     pos = "0"
@@ -152,7 +153,7 @@ class MDP:
         val[2] = util[2]*self.probability['target'] + (util[1]+util[3])*self.probability['alt']
         val[3] = util[3]*self.probability['target'] + (util[0]+util[2])*self.probability['alt']
 
-        total_utility =  self.step_reward +  max(val)
+        total_utility =  self.step_reward +  max(val) + self.original[x][y]
         return total_utility
 
     def get_state_utility(self, curVal, state):
@@ -188,7 +189,7 @@ if __name__ == '__main__':
         rows = rows.split()
         for j in range(m):
             board[i][j] = float(rows[j])
-
+    # original = copy.deepcopy(board)
     # Taking input for e and w, number of end states and number of walls
     inp = raw_input()
     inp = inp.split()
