@@ -223,4 +223,5 @@ if __name__ == '__main__':
     # Creating class object and beginning value iteration
     m = MDP(board, policy, walls, end_states, unit_step_reward, start)
     # m.print_board()
+    print "Optimal policy:"
     m.print_policy()
