@@ -69,7 +69,12 @@ class MDP:
 
     def value_iteration(self):
         """Running value iteration algorithm."""
+        iteration_no = 0
+        print "Iteration #0"
+        self.print_board()
         while True:
+            iteration_no += 1
+            print "Iteration #%d" % iteration_no
             changed_pairs = []
             for i in range(len(self.board)):
                 for j in range(len(self.board[i])):
@@ -79,7 +84,7 @@ class MDP:
                             changed_pairs.append((self.board[i][j] - self.old_board[i][j])/self.old_board[i][j])
                         else:
                             changed_pairs.append(69.0)
-
+            self.print_board()
             # Adding code to check if change is less than delta and then terminate
             if (max(changed_pairs) <= self.delta):
                 return
@@ -217,4 +222,4 @@ if __name__ == '__main__':
 
     # Creating class object and beginning value iteration
     m = MDP(board, policy, walls, end_states, unit_step_reward, start)
-    m.print_board()
+    # m.print_board()
